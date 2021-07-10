@@ -1,3 +1,4 @@
+# exploration du jeu de données
 str(operations)
 head(operations)
 
@@ -12,10 +13,47 @@ rep_par_an <- table (ops_stats$annee)
 rep_par_an
 barplot(rep_par_an)
 
-select(ops_stats, annee, nombre_personnes_impliquees) %>% group_by(annee) %>% summarize()
-personnes_par_an <- select(ops_stats,nombre_personnes_impliquees, annee ) %>% group_by(annee) %>% summarize(nbpax = sum(annee))
+#la fonction nb_radio permet de savoir combien de licences sont actives à l'instant T.
 
+nb_radio <- function (datetest)
+{
+  nrow(filter(radio, (date_ouverture < datetest & date_fermeture > datetest)|(date_ouverture < datetest & is.na(date_fermeture))))
+}
+
+annee <- ymd(seq (19850101, 20200101, by = 10000))
+nb_radio_service <- data.frame(date = annee)
+nb_radio_service <- mutate(nb_radio_service, nb = 1)
+for (i in 1:36)
+{
+  nb_radio_service$nb[i] <- nb_radio(nb_radio_service$date[i])
+}
+
+# Mise en regard des données ANFR/DAM
+personnes_par_an <- select(ops_stats,nombre_personnes_impliquees, annee ) %>%
+  group_by(annee) %>% 
+  summarize(nbpax = sum(nombre_personnes_impliquees))
+
+personnes_par_an <- select(ops_stats, annee, nombre_personnes_impliquees) %>%
+  group_by(annee) %>% 
+  summarize(nb_ops = n()) %>% 
+  mutate(personnes_par_an)
+
+personnes_par_an <- filter(personnes_par_an, !annee %in% c('1984','2021'))
+personnes_par_an <- mutate(personnes_par_an, nb_radio = nb_radio_service$nb, taux=nb_radio/nb_ops)
+
+# affichage graphique
 plot(personnes_par_an)
+
+# choix de la vue et affichage final
 g<- ggplot(data = personnes_par_an)
-g <- g + geom_point(aes(annee, nbpax))+scale_y_log10()
+g <- g + 
+  geom_point(aes(annee, nb_ops), color = "red")+
+  scale_y_log10()+
+  geom_point(aes(annee, nb_radio), color="blue") +
+  ggtitle("Évolution conjointe opérations CROSS / nombre de licences radio")+
+  xlab("Année") + 
+  ylab("Nombre")+
+  theme_economist()
+  
 g
+                   
