@@ -45,15 +45,18 @@ personnes_par_an <- mutate(personnes_par_an, nb_radio = nb_radio_service$nb, tau
 plot(personnes_par_an)
 
 # choix de la vue et affichage final
+legende <- data.frame(bandeaux = c('Licences','Opérations'), x=c(1986,1986),y=c(10000,5000), couleur = c('red','blue'))
+
 g<- ggplot(data = personnes_par_an)
 g <- g + 
-  geom_point(aes(annee, nb_ops), color = "red")+
+  geom_line(aes(annee, nb_ops), color = legende$couleur[1])+
   scale_y_log10()+
-  geom_point(aes(annee, nb_radio), color="blue") +
+  geom_line(aes(annee, nb_radio), color = legende$couleur[2]) +
+  geom_text(data = legende, aes(x,y,label = bandeaux,color = couleur))+
   ggtitle("Évolution conjointe opérations CROSS / nombre de licences radio")+
   xlab("Année") + 
   ylab("Nombre")+
-  theme_economist()
+  theme(legend.position = 'none')
+  #theme_economist(legend.position='none')
   
 g
-                   
